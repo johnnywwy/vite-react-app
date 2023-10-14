@@ -970,7 +970,115 @@
 
       改造后，Header组件的传参不见了。这是因为把Header放到Entry页面后，就没有给Header组件传递title参数了。关于组件间传参、使用useLocation()定位当前路由，以及二级路由的使用，这些关键知识点已经讲解完，这里也就不再对Header组件进行修改了。
 
-​	
+8. ### React Developer Tools浏览器插件
 
+   安装完成后，打开Chrome DevTools，点击Components按钮，可以清晰的看到React项目代码结构以及各种传参。
 
+9. ### Redux及Redux Toolkit
+
+   Redux是用来做什么的？简单通俗的解释，Redux是用来管理项目级别的全局变量，而且是可以实时监听变化并改变DOM的。当多个模块都需要动态显示同一个数据，并且这些模块从属于不同的父组件，或者在不同的页面中，如果没有Redux，那实现起来就很麻烦了，问题追踪也很痛苦。Redux就是解决这个问题的。
+
+   做过Vue开发的同学都知道Vuex，React对应的工具就是Redux。在以前，在React中使用Redux还需要redux-thunk、immutable等插件，逻辑非常麻烦，也很难理解。现在官方推出了Redux Toolkit，一个开箱即用的高效的Redux开发工具集，不需要依赖第三方插件了，使用起来也很简洁。
+
+   1. #####  安装Redux及Redux Toolkit
+
+      ```yaml
+       pnpm install @reduxjs/toolkit react-redux
+      ```
+
+   2. ##### 创建全局配置文件
+
+      新建`src/globalConfig.jsx`：
+
+      ```jsx
+      /**
+       * 全局配置
+       */
+       export const globalConfig = {
+        // 初始主题（localStorage未设定的情况）
+        initTheme: {
+          // 初始为亮色主题
+          dark: false,
+          // 初始主题色
+          // 与customColorPrimarys数组中的某个值对应
+          // null表示默认使用Ant Design默认主题色或customColorPrimarys第一种主题色方案
+          colorPrimary: null,
+        },
+        // 供用户选择的主题色，如不提供该功能，则设为空数组
+        customColorPrimarys: [
+          '#1677ff',
+          '#f5222d',
+          '#fa8c16',
+          '#722ed1',
+          '#13c2c2',
+          '#52c41a',
+        ],
+        // localStroge用户主题信息标识
+        SESSION_LOGIN_THEME: 'userTheme',
+        // localStroge用户登录信息标识
+        SESSION_LOGIN_INFO: 'userLoginInfo',
+      }
+      ```
+
+      globalConfig其实与Redux没有太深入的关系，只是为了方便配置一些初始化默认值而已,以及定义localStorage的变量名，这么做就是为了把配置项都抽出来方便维护。
+
+   3. ##### 创建用于主题换肤的store分库
+
+      为了便于讲解，先创建分库。按照官方的概念，分库叫做slice。可以为不同的业务创建多个slice，便于独立维护。这里结合主题换肤功能，创建对应的分库。	
+
+      新建`store/slices/theme.jsx`：
+
+      ```jsx
+      import { createSlice } from '@reduxjs/toolkit'
+      import { globalConfig } from '@/globalConfig'
+      
+      // 先从localStorage里获取主题配置
+      const sessionTheme = JSON.parse(window.localStorage.getItem(globalConfig.SESSION_LOGIN_THEME))
+      
+      // 如果localStorage里没有主题配置，则使用globalConfig里的初始化配置
+      const initTheme =  sessionTheme?sessionTheme: globalConfig.initTheme
+      
+      //该store分库的初始值
+      const initialState = {
+          dark: initTheme.dark,
+          colorPrimary: initTheme.colorPrimary
+      }
+      
+      export const themeSlice = createSlice({
+          // store分库名称
+          name: 'theme',
+          // store分库初始值
+          initialState,
+          reducers: {
+              // redux方法：设置亮色/暗色主题
+              setDark: (state, action) => {
+                  // 修改了store分库里dark的值（用于让全项目动态生效）
+                  state.dark = action.payload
+                  // 更新localStorage的主题配置（用于长久保存主题配置）
+                  window.localStorage.setItem(globalConfig.SESSION_LOGIN_THEME, JSON.stringify(state))
+              },
+              // redux方法：设置主题色
+              setColorPrimary: (state, action) => {
+                  // 修改了store分库里colorPrimary的值（用于让全项目动态生效）
+                  state.colorPrimary = action.payload
+                  // 更新localStorage的主题配置（用于长久保存主题配置）
+                  window.localStorage.setItem(globalConfig.SESSION_LOGIN_THEME, JSON.stringify(state))
+              },
+          },
+      })
+      
+      // 将setDark和setColorPrimary方法抛出
+      export const { setDark } = themeSlice.actions
+      export const { setColorPrimary } = themeSlice.actions
+      
+      export default themeSlice.reducer
+      
+      ```
+
+      再啰嗦一下这部分的关键逻辑：
+
+      1. 先从localStorage里获取主题配置，这么做是为了将用户的主题配置保存在浏览器中，用户在刷新或者重新打开该项目的时候，会直接应用之前设置的主题配置。
+      2. 如果localStorage没有主题配置，则从globalConfig读取默认值，然后再写入localStorage。这种情况一般是用户使用当前浏览器第一次浏览该项目时会用到。
+      3. setDark用来设置“亮色/暗色主题”，setColorPrimary用来设置“主题色”。每次设置后，除了变更store里的值（为了项目全局动态及时生效），还要同步写入localStorage（为了刷新或重新打开时及时生效）。
+      4. “亮色/暗色主题”和“主题色”虽然都是颜色改变，但是完全不同的两个维度的换肤。“亮色/暗色主题”主要是对默认的文字、背景、边框等基础元素进行黑白切换，而“主题色”则是对带有“品牌色”的按钮等控件进行不同色系的颜色切换。
 
