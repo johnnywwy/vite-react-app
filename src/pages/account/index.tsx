@@ -11,7 +11,7 @@ function Account() {
   }
   return (
     <div className="P-account">
-      <Header />
+      <Header title="account" info={() => { console.log('info:home') }} />
       <h1>Account Page</h1>
       <div className="ipt-con">
         <Button type="primary" onClick={back}>返回登录</Button>

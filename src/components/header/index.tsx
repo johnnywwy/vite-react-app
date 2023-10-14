@@ -5,12 +5,18 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import './header.styl'
 
 
-function Header() {
+function Header(props) {
   // 创建路由定位钩子
   const location = useLocation()
 
   // 创建路由钩子
   const navigate = useNavigate()
+
+  // 接收来自父组件的数据
+  const { title, info } = props
+
+  // 如果info存在，则执行info()
+  info && info()
 
   // 定义导航栏
   const menuItems = [
@@ -39,7 +45,7 @@ function Header() {
   return (
     <Card className="M-header">
       <div className="header-wrapper">
-        <div className="logo-con">Header</div>
+        <div className="logo-con">Header: props传过来的{title}</div>
         <div className="menu-con">
           <Menu mode="horizontal" selectedKeys={[location.pathname]} items={menuItems} />
         </div>
