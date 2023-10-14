@@ -597,9 +597,380 @@
 
       > Ant Design官方说明：https://ant-design.antgroup.com/components/icon-cn#%E8%87%AA%E5%AE%9A%E4%B9%89-icon
 
+      
 
+      下面具体分享一下这种高效的方案。
 
+      第一步：创建自定义图标库
 
+      新建`src/components/extraIcons/index.jsx`：
+
+      > ※注：一定要仔细坚持以下三方面。
+      >
+      > 1. 检查svg代码中是否有class以及与颜色相关的fill、stroke等属性，如有，必须连带属性一起删除。
+      > 2. 确保`<SVG>`标签中有fill="currentColor"，否则图标的颜色将不能改变。
+      > 3. 确保`<SVG>`标签中width和height属性的值为1em，否则图标的大小将不能改变。
+
+      SVG代码太长了，这里就不全部贴出来了。
+
+      这样，自定义Icon就制作好了。使用方法在下一小节介绍。
+
+   2. ##### 创建Header组件
+
+      新建`src/components/header/index.tsx`：
+
+      ```jsx
+      import { Button, Card } from 'antd'
+      import { MoonOutlined, ThemeOutlined } from '@/components/extraIcons'
+      import './header.styl'
+      
+      function Header() {
+          return (
+              <Card className="M-header">
+                  <div className="header-wrapper">
+                      <div className="logo-con">Header</div>
+                      <div className="opt-con">
+                          <Button icon={<MoonOutlined />} shape="circle"></Button>
+                          <Button icon={<ThemeOutlined />} shape="circle"></Button>
+                      </div>
+                  </div>
+              </Card>
+          )
+      }
+      
+      export default Header
+      ```
+
+      新建`src/components/header/header.styl`：
+
+      ```css
+      .M-header
+          position: relative
+          z-index: 999
+          border-radius: 0
+          overflow hidden
+          .ant-card-body
+              padding: 16px 24px
+              height: 62px
+              line-height: 32px
+          .header-wrapper
+              display: flex
+              .logo-con
+                  display: flex
+                  font-size: 30px
+                  font-weight: bold
+              .opt-con
+                  display: flex
+                  flex: 1
+                  justify-content: flex-end
+                  gap: 20px
+      
+      ```
+
+      
+
+   3. ##### 引入Header组件
+
+      在Home页面里引入Header组件
+
+      
+
+      修改`src/pages/home/index.jsx`：
+
+      ```tsx
+          import { useNavigate } from 'react-router-dom'
+          import { Button } from 'antd'
+      +   import Header from '@/components/header'
+          import { goto } from '@/api'
+          import './home.styl'
+          
+          function Home() {
+              // 创建路由钩子
+              const navigate = useNavigate()
+          
+              return (
+                  <div className="P-home">
+      +               <Header />
+                      <h1>Home Page</h1>
+      
+                  ...（略）
+      
+      ```
+
+   4. #####  在Header组件中添加页面导航
+
+      现在，要在Header组件中添加页面导航，主要实现两个功能：
+
+      1. 点击导航，跳转到对应的页面
+      2. 根据当前所处的页面，将对应的导航进行“当前态”显示
+
+      在本示例中，Header组件仅出现在Home和Account页面，因此导航中不包括Login页面。
+
+      修改`src/components/header/index.jsx`：
+
+      ```tsx
+      M   import { Button, Card, Menu } from 'antd'
+          import { MoonOutlined, ThemeOutlined } from '@/components/extraIcons'
+      +   import { HomeOutlined, UserOutlined } from '@ant-design/icons'
+      +   import { useLocation, useNavigate } from 'react-router-dom'
+          import './header.styl'
+          
+          function Header() {
+          
+      +       // 创建路由定位钩子
+      +       const location = useLocation()
+      +       // 创建路由钩子
+      +       const navigate = useNavigate()
+          
+      +       // 定义导航栏
+      +       const menuItems = [
+      +           {   
+      +               // 导航显示的名称
+      +               label: 'Home',
+      +               // 导航唯一标识，为便于当前态的显示，与当前路由保持一致
+      +               key: '/home',
+      +               // 导航的前置图标
+      +               icon: <HomeOutlined />,
+      +               // 点击跳转行为
+      +               onClick: () => {
+      +                   navigate('/home')
+      +               },
+      +           },
+      +           {
+      +               label: 'Account',
+      +               key: '/account',
+      +               icon: <UserOutlined />,
+      +               onClick: () => {
+      +                   navigate('/account')
+      +               },
+      +           },
+      +       ]
+          
+              return (
+                  <Card className="M-header">
+                      <div className="header-wrapper">
+                          <div className="logo-con">Header</div>
+      +                   <div className="menu-con">
+      +                       <Menu mode="horizontal" selectedKeys={location.pathname} items={menuItems} />
+      +                   </div>
+                          <div className="opt-con">
+                              <Button icon={<MoonOutlined />} shape="circle"></Button>
+                              <Button icon={<ThemeOutlined />} shape="circle"></Button>
+                          </div>
+                      </div>
+                  </Card>
+              )
+          }
+          
+          export default Header
+      
+      ```
+
+      修改`src/components/header/header.styl`：
+
+      ```css
+          .M-header
+              ...（略）
+              .header-wrapper
+                  display: flex
+                  .logo-con
+                      display: flex
+                      font-size: 30px
+                      font-weight: bold
+      +           .menu-con
+      +               margin-left: 20px
+      +               width: 300px
+                  .opt-con
+                      display: flex
+                      flex: 1
+                      justify-content: flex-end
+                      gap: 20px
+      
+      ```
+
+      这里需要注意的就是useLocation()的使用。通过useLocation()的pathname，可以得到当前页面所处的路由地址，结合Menu组件中对导航key的定义，就可以判断是否为当前页面了。使用useLocation方法，可以很方便实现页面位置导航及当前页面状态显示等交互需求，非常适合与Antd的Menu导航菜单组件、Breadcrumb面包屑组件搭配使用。
+
+      
+
+   5. ##### 组件传参
+
+      使用过Vue的同学都知道，Vue组件有data和props。
+
+      data是组件内的数据；
+
+      props用来接收父组件传递来的数据。
+
+      在React中，如果使用的是Class方式定义的组件：
+
+      state是组件内的数据；
+
+      props用来接收父组件传递来的数据。
+
+      如果使用的是function方式定义的组件（也叫“无状态组件”或“函数式组件”）：
+
+      使用useState()管理组件内的数据（hook）；
+
+      使用props接收父组件传递来的数据。
+
+      Class组件有明确的声明周期管理，但是代码相对来说不如无状态组件简洁优雅。
+
+      无状态组件通过hook管理声明周期，效率更高。因此本教程**全程使用无状态组件**讲解。
+
+      下面简单演示下如何实现向子组件传递数据。
+
+      通过Home和Account分别向Header组件传递不同的值，并显示在Header组件中。
+
+      
+
+      修改`src/pages/home/index.jsx`：
+
+      ```jsx
+          ...（略）
+      M   <Header title="home" info={()=>{console.log('info:home')}} />
+          ...（略）
+      ```
+
+      修改`src/pages/account/index.jsx`：
+
+      ```jsx
+          ...（略）
+      M   <Header title="account" info={()=>{console.log('info:account')}} />
+          ...（略）
+      ```
+
+      修改`src/components/header/index.jsx`：
+
+      ```jsx
+        ...（略）
+          
+      M   function Header(props) {
+              ...（略）
+              
+      +       // 接收来自父组件的数据
+      +       const { title, info } = props
+          
+      +       // 如果info存在，则执行info()
+      +       info && info()
+          
+              return (
+                  <Card className="M-header">
+                      <div className="header-wrapper">
+      M                   <div className="logo-con">Header:{title}</div>
+                          ...（略）
+      
+      ```
+
+      
+
+7. ### 二级路由配置
+
+   在第6章节中，将Header组件分别导入到Home和Account页面，这显然是一种非常低效的方式。如果有N个页面，那要引入N多次。结合这个问题，下面来讲解如何通过二级路由来解决这个问题。
+
+   1. ##### 创建二级路由的框架页面
+
+      新建`src/pages/entry/index.jsx`：
+
+      ```tsx
+      import { Outlet } from 'react-router-dom'
+      import Header from '@/components/header'
+      import './entry.styl'
+      
+      function Entry() {
+          return (
+              <div className="M-entry">
+                  <Header />
+                  <div className="main-container">
+                      <Outlet />
+                  </div>
+              </div>
+          )
+      }
+      
+      export default Entry
+      
+      ```
+
+      新建`src/pages/entry/entry.styl`：
+
+      ```css
+      .M-entry
+          display: flex
+          flex-direction: column
+          height: 100%
+          .main-container
+              position: relative
+              flex: 1
+      
+      ```
+
+      
+
+      这里的`<Outlet>`就是为二级路由页面挖好的“坑”，Entry下的路由页面会放到`<Outlet>`位置，而Header组件则是一次性引入，非常方便。
+
+      然后把Home和Account页面中的Header组件删掉。否则会与Entry里的Header组件重复出现。
+
+      
+
+      修改`src/pages/home/index.jsx`, src/pages/account/index.jsx：
+
+      ```jsx
+      -   import Header from '@/components/header'
+      ```
+
+   2. ##### 配置二级路由
+
+      修改`src/router/index.jsx`：
+
+      ```jsx
+      import { createHashRouter, Navigate } from 'react-router-dom'
+      import Login from '@/pages/login'
+      import Home from '@/pages/home'
+      import Account from '@/pages/account'
+      // 引入Entry框架页面
+      import Entry from '@/pages/entry'
+      
+      // 全局路由
+      export const globalRouters = createHashRouter([
+          // 对精确匹配"/login"，跳转Login页面
+          {
+              path: '/login',
+              element: <Login />,
+          },
+          {
+              // 未匹配"/login"，全部进入到entry路由
+              path: '/',
+              element: <Entry />,
+              // 定义entry二级路由
+              children: [
+                  {
+                      // 精确匹配"/home"，跳转Home页面
+                      path: '/home',
+                      element: <Home />,
+                  },
+                  {
+                      // 精确匹配"/account"，跳转Account页面
+                      path: '/account',
+                      element: <Account />,
+                  },
+                  {
+                      // 如果URL没有"#路由"，跳转Home页面
+                      path: '/',
+                      element: <Navigate to="/home" />,
+                  },
+                  {
+                      // 未匹配，跳转Login页面
+                      path: '*',
+                      element: <Navigate to="/login" />,
+                  },
+              ],
+          },
+      ])
+      
+      ```
+
+      改造后，Header组件的传参不见了。这是因为把Header放到Entry页面后，就没有给Header组件传递title参数了。关于组件间传参、使用useLocation()定位当前路由，以及二级路由的使用，这些关键知识点已经讲解完，这里也就不再对Header组件进行修改了。
+
+​	
 
 
 
