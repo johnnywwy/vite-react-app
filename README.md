@@ -517,7 +517,85 @@
       
       ```
 
+   5. ##### 在React组件中实现页面路由跳转
+
+      下面要实现的功能是，点击Login页面的“登录”按钮，跳转至Home页面。
+
+      修改`src/pages/login/index.jsx`
+
+      ```jsx
+      +   import { useNavigate } from 'react-router-dom'
+          import { Button, Input } from 'antd'
+          import imgLogo from './logo.png'
+          import './login.styl'
+          
+          function Login() {
+          
+      +       // 创建路由钩子
+      +        const navigate = useNavigate()
+      +        const back = () => {
+          		navigate('/login')
+        		}
+       
+              return (
+                  <div className="ipt-con">
+      M               <Button type="primary" block={true} onClick={back}>登录</Button>
+                  </div>
+          )
       
+      ```
+
+      余下的页面如此类推，不再赘述
+
+      
+
+   6. ##### 在非React组件中实现页面路由跳转
+
+      在实际项目中，经常需要在非React组件中进行页面跳转。比如，当进行API请求的时候，如果发现登录认证已失效，就直接跳转至Login页面；当API请求失败时，进行统一的报错提示。
+
+      以上这些情况的统一处理，当然是封装成公用的模块最合适。但往往这些纯功能性的模块都不是React组件，而是纯原生js。所以就没办法使用useNavigate()了。
+
+      下面介绍一下如何实现在非React组件中进行页面路由跳转。
+
+      
+
+      新建`src/api/index.jsx`：
+
+      ```jsx
+      import {globalRouters} from '@/router'
+      
+      export const goto = (path) => {
+          globalRouters.navigate(path)
+      }
+      ```
+
+      在Home页点击“组件外跳转”按钮，可以正常跳转至Login页面了，而实际执行跳转的代码是在`src/api/index.jsx`（非React组件）中，这样就非常适合封装统一的处理逻辑。
+
+      
+
+      后续章节会讲述如何封装api接口，并通过组件外路由的方式实现API调用失败时的统一跳转。
+
+6. ### 组件开发
+
+   为了配合后续章节介绍二级路由和主题换肤，构建一个公用的头部组件。
+
+   1. ##### 创建自定义SVG图标Icon组件
+
+      Antd自带了很多Icon，非常方便直接使用。但在项目中遇到Antd没有的图标怎么办？当然，前提要求是自己构建的图标也能支持随时改变颜色和大小等样式。
+
+      
+
+      例如针对切换亮色/暗色主题功能，Antd没有提供“太阳”“月亮”“主题色”的Icon。
+
+      
+
+      第一个方法是在iconfont网站([www.iconfont.cn/](https://link.juejin.cn?target=https%3A%2F%2Fwww.iconfont.cn%2F))上制作自己的iconfont字体，然后以字体文件的方式应用到项目中。这种方式相信从事前端开发的同学都很熟悉了，不再赘述。这种方式相对来说比较麻烦，每次图标有变动时，都要重新生成一遍，而且遇到iconfont网站打不开等突发情况时，只能干着急。不是很推荐。
+
+      
+
+      这里推荐第二个方法，就是基于Antd的Icon组件制作本地的自定义图标，而且用起来跟Antd自带的Icon是一样的，也不用额外考虑换肤的问题。虽然Antd官网介绍了制作方法，但讲解得不够具体。
+
+      > Ant Design官方说明：https://ant-design.antgroup.com/components/icon-cn#%E8%87%AA%E5%AE%9A%E4%B9%89-icon
 
 
 
