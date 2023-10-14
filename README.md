@@ -329,9 +329,195 @@
       }
       ```
 
+      `src/pages/login/login.styl`
+
+      ```css
+      .P-login
+          position: absolute
+          top: 0
+          bottom: 0
+          width: 100%
+          background: #7adbcb
+          .logo
+              display: block
+              margin: 50px auto 20px
+          .ipt-con
+              margin: 0 auto 20px
+              width: 400px
+              text-align: center
+      
+      ```
+
       
 
-   2. 
+   2. ##### 构建Home页面
+
+      `src/pages/home/index.jsx`
+
+      ```tsx
+      import { Button } from 'antd'
+      import './home.styl'
+      
+      function Home() {
+      
+          return (
+              <div className="P-home">
+                  <h1>Home Page</h1>
+                  <div className="ipt-con">
+                      <Button type="primary">返回登录</Button>
+                  </div>
+              </div>
+          )
+      }
+      
+      export default Home
+      ```
+
+      `src/pages/home/home.styl`
+
+      ```css
+      .P-home
+          position: absolute
+          top: 0
+          bottom: 0
+          width: 100%
+          background: linear-gradient(#f48c8d,#f4c58d)
+          h1
+              margin-top: 50px
+              text-align: center
+              color: #fff
+              font-size: 40px
+          .ipt-con
+              margin: 20px auto 0
+              text-align: center
+      
+      ```
+
+      
+
+   3. ##### 构建Account页面
+
+      `src/pages/account/index.jsx`
+
+      ```jsx
+      import { Button } from 'antd'
+      import './account.styl'
+      
+      function Account() {
+      
+          return (
+              <div className="P-account">
+                  <h1>Account Page</h1>
+                  <div className="ipt-con">
+                      <Button type="primary">返回登录</Button>
+                  </div>
+              </div>
+          )
+      }
+      
+      export default Account
+      ```
+
+      
+
+      `src/pages/account/account.styl`
+
+      ```
+      .P-account
+          position: absolute
+          top: 0
+          bottom: 0
+          width: 100%
+          background: linear-gradient(#f48c8d,#f4c58d)
+          h1
+              margin-top: 50px
+              text-align: center
+              color: #fff
+              font-size: 40px
+          .ipt-con
+              margin: 20px auto 0
+              text-align: center
+      ```
+
+      
+
+   4. ##### 通过一级路由实现页面跳转
+
+      为了实现页面的跳转，需要安装react-router-dom。
+
+      ```csharp
+      pnpm install react-router-dom
+      ```
+
+      
+
+      接下来进行路由配置
+
+      新建`src/router/index.jsx`：
+
+      ```tsx
+      import { createHashRouter, Navigate } from 'react-router-dom'
+      import Login from '@/pages/login'
+      import Home from '@/pages/home'
+      import Account from '@/pages/account'
+      
+      // 全局路由
+      export const globalRouters = createHashRouter([
+          // 对精确匹配"/login"，跳转Login页面
+          {
+              path: '/login',
+              element: <Login />,
+          },
+          // 精确匹配"/home"，跳转Home页面
+          {
+              path: '/home',
+              element: <Home />,
+          },
+          // 精确匹配"/account"，跳转Account页面
+          {
+              path: '/account',
+              element: <Account />,
+          },
+          // 如果URL没有"#路由"，跳转Home页面
+          {
+              path: '/',
+              element: <Home />,
+          },
+          // 未匹配，，跳转Login页面
+          {
+              path: '*',
+              element: <Navigate to="/login" />,
+          },
+      ])
+      
+      ```
+
+      为循序渐进讲解，暂时先将Login、Home、Account都当做一级页面，通过一级路由实现跳转。代码注释已写明跳转逻辑，不再赘述。
+
+      接下来应用以上路由配置，修改`src/main.jsx`
+
+      ```jsx
+      	import React from 'react'
+          import ReactDOM from 'react-dom/client'
+      +   import { RouterProvider } from 'react-router-dom'
+      +   import { globalRouters } from '@/router'
+      -   import App from '@/pages/account'
+          import { ConfigProvider } from 'antd'
+          // 引入Ant Design中文语言包
+          import zhCN from 'antd/locale/zh_CN'
+          // 全局样式
+          import '@/common/styles/frame.styl'
+          
+          ReactDOM.createRoot(document.getElementById('root')).render(
+              <ConfigProvider locale={zhCN}>
+      -           <App />
+      +           <RouterProvider router={globalRouters} />
+              </ConfigProvider>
+          )
+      
+      ```
+
+      
 
 
 
