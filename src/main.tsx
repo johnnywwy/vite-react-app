@@ -12,6 +12,10 @@ import { globalRouters } from '@/router'
 
 import { ConfigProvider } from 'antd'
 
+// 引入 store redux
+import { store } from '@/store'
+import { Provider } from 'react-redux'
+
 // 引入Ant Design中文语言包
 import zhCN from 'antd/locale/zh_CN'
 
@@ -21,7 +25,9 @@ import '@/common/styles/frame.styl'
 
 ReactDOM.createRoot(document.getElementById('root')!)
   .render(
-    <ConfigProvider locale={zhCN}>
-      <RouterProvider router={globalRouters} />
-    </ConfigProvider>
+    <Provider store={store}>
+      <ConfigProvider locale={zhCN}>
+        <RouterProvider router={globalRouters} />
+      </ConfigProvider>
+    </Provider>
   )
