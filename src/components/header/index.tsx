@@ -1,5 +1,6 @@
 import { Button, Card } from 'antd'
 import { MoonOutlined, ThemeOutlined } from '@/components/extraIcons'
+import './header.styl'
 
 
 function Header() {
