@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom'
-import Header from '@/components/header'
 import { Button } from 'antd'
 import './home.styl'
 import { goto } from '@/api'
@@ -11,7 +10,6 @@ function Home() {
   }
   return (
     <div className="P-home">
-      <Header title="home" info={() => { console.log('info:home') }} />
       <h1>Home Page</h1>
       <div className="ipt-con">
         <Button onClick={() => { goto('/login') }}>组件外跳转</Button>

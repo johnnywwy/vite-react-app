@@ -1,8 +1,6 @@
 import { useNavigate } from 'react-router-dom'
-
 import { Button } from 'antd'
 import './account.styl'
-import Header from '@/components/header'
 
 function Account() {
   const navigate = useNavigate()
@@ -11,7 +9,6 @@ function Account() {
   }
   return (
     <div className="P-account">
-      <Header title="account" info={() => { console.log('info:home') }} />
       <h1>Account Page</h1>
       <div className="ipt-con">
         <Button type="primary" onClick={back}>返回登录</Button>
