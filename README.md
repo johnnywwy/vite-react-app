@@ -1078,7 +1078,77 @@
       再啰嗦一下这部分的关键逻辑：
 
       1. 先从localStorage里获取主题配置，这么做是为了将用户的主题配置保存在浏览器中，用户在刷新或者重新打开该项目的时候，会直接应用之前设置的主题配置。
+
       2. 如果localStorage没有主题配置，则从globalConfig读取默认值，然后再写入localStorage。这种情况一般是用户使用当前浏览器第一次浏览该项目时会用到。
+
       3. setDark用来设置“亮色/暗色主题”，setColorPrimary用来设置“主题色”。每次设置后，除了变更store里的值（为了项目全局动态及时生效），还要同步写入localStorage（为了刷新或重新打开时及时生效）。
+
       4. “亮色/暗色主题”和“主题色”虽然都是颜色改变，但是完全不同的两个维度的换肤。“亮色/暗色主题”主要是对默认的文字、背景、边框等基础元素进行黑白切换，而“主题色”则是对带有“品牌色”的按钮等控件进行不同色系的颜色切换。
+
+         
+
+   4. ### 创建store总库
+
+      新建`store/index.jsx`：
+
+      ```jsx
+      import { configureStore } from '@reduxjs/toolkit'
+      // 引入主题换肤store分库
+      import themeReducer from '@/store/slices/theme'
+      
+      export const store = configureStore({
+        reducer: {
+          // 主题换肤store分库
+          theme: themeReducer
+          // 可以根据需要在这里继续追加其他分库
+        },
+      })
+      
+      ```
+
+      
+
+   5. ### 引入store到项目
+
+      首先，将store引入到项目工程中
+
+      修改`src/main.jsx`：
+
+      ```
+      +   import { store } from '@/store'
+      +   import { Provider } from 'react-redux'
+      ...
+      
+       ReactDOM.createRoot(document.getElementById('root')).render(
+      +       <Provider store={store}>
+                  <ConfigProvider locale={zhCN}>
+                      <RouterProvider router={globalRouters} />
+                  </ConfigProvider>
+      +       </Provider>
+          )
+      
+      
+      ```
+
+      
+
+      
+
+   6. ### store的使用：实现亮色/暗色主题切换
+
+   7. 
+
+      原理就是创建总库，把各个分库都汇总起来。注释已写明，不再赘述。
+
+      
+
+      ​	
+
+      ##### 
+
+      
+
+      
+
+      
 
