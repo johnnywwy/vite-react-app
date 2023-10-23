@@ -1130,25 +1130,423 @@
       
       ```
 
-      
+      其实就是用react-redux提供的Provider带上store把项目包起来，这样整个项目就可以随时随地访问store了。
 
       
 
    6. ### store的使用：实现亮色/暗色主题切换
 
-   7. 
+      1. 由于主题换肤的交互操作位于Header组件，所以让Header组件对接store总库。
 
-      原理就是创建总库，把各个分库都汇总起来。注释已写明，不再赘述。
+         修改`src/components/header/index.jsx`：
 
+         ```tsx
+             import { Button, Card, Menu } from 'antd'
+         +   // 新加入“太阳”图标
+         M   import { MoonOutlined, ThemeOutlined, SunOutlined } from '@/components/extraIcons'
+             import { HomeOutlined, UserOutlined } from '@ant-design/icons'
+             import { useLocation, useNavigate } from 'react-router-dom'
+         +   // 引入Redux
+         +   import { useSelector, useDispatch } from 'react-redux'
+         +   // 从主题换肤store分库引入setDark方法
+         +   import { setDark } from '@/store/slices/theme'
+             import './header.styl'
+             
+             function Header(props) {
+             
+                 // 创建路由定位钩子
+                 const location = useLocation()
+                 // 创建路由钩子
+                 const navigate = useNavigate()
+                 
+                 // 定义导航栏
+                 const menuItems = [
+                     ...（略）
+                 ]
+             
+         +       // 获取redux派发钩子
+         +       const dispatch = useDispatch()
+             
+         +       // 获取store中的主题配置
+         +       const theme = useSelector((state) => state.theme)
+             
+                 // 接收来自父组件的数据
+                 const { title, info } = props
+             
+                 // 如果info存在，则执行info()
+                 info && info()
+             
+                 return (
+                     <Card className="M-header">
+                         <div className="header-wrapper">
+                             <div className="logo-con">Header:{title}</div>
+                             <div className="menu-con">
+                                 <Menu
+                                     mode="horizontal"
+                                     selectedKeys={location.pathname}
+                                     items={menuItems}
+                                 />
+                             </div>
+                             <div className="opt-con">
+         -                       <Button icon={<MoonOutlined />} shape="circle"></Button>
+         +                       {theme.dark ? (
+         +                           <Button
+         +                               icon={<SunOutlined />}
+         +                               shape="circle"
+         +                               onClick={() => {
+         +                                   dispatch(setDark(false))
+         +                               }}
+         +                           ></Button>
+         +                       ) : (
+         +                           <Button
+         +                               icon={<MoonOutlined />}
+         +                               shape="circle"
+         +                               onClick={() => {
+         +                                   dispatch(setDark(true))
+         +                               }}
+         +                           ></Button>
+         +                       )}
+                                 <Button icon={<ThemeOutlined />} shape="circle"></Button>
+                             </div>
+                         </div>
+                     </Card>
+                 )
+             }
+             
+             export default Header
+         
+         ```
+   
+         必要的注释已经写好了。useDispatch和useSelector可以通俗理解为：
+   
+         - useDispatch用于写入store库，调用store里定义的方法。
+         - useSelector用于读取store库里的变量值。
+   
+         以上代码中的theme就是从总库中获取的theme分库。theme.dark就是从theme分库中读取的dark值，从而判断当前是亮色还是暗色主题，进而确定是显示“月亮”按钮还是“太阳”按钮。
+   
+         现在运行起来，点击Header里的“月亮/太阳”图标，可以进行切换了。但是并没有看到暗色主题效果？这是因为还没有把主题配置传递给Antd。
+   
+         在本教程的需求中，Login页面不参与主题换肤，而其他页面参与主题换肤。因此，只需要在Entry页面通过useSelector将当前store里的主题配置读取出来，再应用给Antd即可。
+   
+         修改`src/entry/index.jsx`：
+   
+         ```tsx
+         import { Outlet } from 'react-router-dom'
+             import Header from '@/components/header'
+         +   import { useSelector } from 'react-redux'
+         +   import { ConfigProvider, theme } from 'antd'
+             import './entry.styl'
+             
+         +   // darkAlgorithm为暗色主题，defaultAlgorithm为亮色（默认）主题
+         +   // 注意这里的theme是来自于Ant Design的，而不是store
+         +   const { darkAlgorithm, defaultAlgorithm } = theme
+             
+             function Entry() {
+             
+         +       // 获取store中的主题配置
+         +       const globalTheme = useSelector((state) => state.theme)
+             
+         +       // Ant Design主题变量
+         +       let antdTheme = {
+         +           // 亮色/暗色配置
+         +           algorithm: globalTheme.dark ? darkAlgorithm : defaultAlgorithm,
+         +       }
+             
+                 return (
+         +           <ConfigProvider theme={antdTheme}>
+                         <div className="M-entry">
+                             <Header />
+                             <div className="main-container">
+                                 <Outlet />
+                             </div>
+                         </div>
+         +           </ConfigProvider>
+                 )
+             }
+             
+             export default Entry
+         
+         ```
+   
+         必要的注释已经写好了。主要逻辑就是从store里读取当前的主题配置，然后通过Antd提供的ConfigProvider带着antdTheme，把Entry页面包起来
+   
       
-
+   
+   7. 非Ant Design组件的主题换肤
+   
+      细心的同学可能发现了，上一章节中的主题切换，页面中的`“Home Page”`文字始终是白色，并没有跟随换肤。这是因为它并没有包裹在Antd的组件中。而Header组件能够换肤是因为其外层用了Antd的`<Card>`组件。所以在开发过程中，建议尽量使用Antd组件。当然，很可能会遇到自行开发的组件也要换肤。
+   
+      接下来，就以`“Home Page”`文字换肤为目标，讲解下如何实现非Ant Design组件的主题换肤。
+   
+      实现方式就是用Ant Design提供的useToken方法将当前主题的颜色赋值给非自定义组件。
+   
+      修改`src/pages/home/index.jsx`：
+   
+      ```tsx
+       import { useNavigate } from 'react-router-dom'
+      M   import { Button, theme } from 'antd'
+          import { goto } from '@/api'
+          import './home.styl'
+          
+      +   const { useToken } = theme
+          
+          function Home() {
+      
+              // 创建路由钩子
+              const navigate = useNavigate()
+              
+      +       // 获取Design Token
+      +       const { token } = useToken()
+      
+              return (
+                  <div className="P-home">
+      M               <h1 style={{color: token.colorText}}>Home Page</h1>
+                      <div className="ipt-con">
+                  ...（略）
+      
+      ```
+   
+      这里将`“Home Page”`的文字色设为了token.colorText，即当前Antd文本色，因此会跟随主题进行换肤。同理，如果想让自定义组件的背景色换肤，可以使用token.colorBgContainer；边框色换肤，可以使用token.colorBorder；使用当前Antd主题色，可以使用token.colorPrimary。
+   
+      以上这些token，就是Antd官网所介绍的SeedToken、MapToken、AliasToken，这些token涵盖了各种场景的颜色，大家参照官网列出的token说明挑选合适参数即可。
+   
+      
+   
+   8. store的使用：实现主题色切换
+   
+      在src/globalConfig.jsx里的customColorPrimarys就是留给主题色换肤的。接下来讲解下具体实现方法。为了让交互体验稍微好一点，通过Antd的Modal组件来制作主题色选择功能。
+   
+      1、创建主题色选择对话框组件
+   
+      新建`src/components/themeModal/index.jsx`：
+   
+      ```tsx
+      import { Modal } from 'antd'
+      import { useSelector, useDispatch } from 'react-redux'
+      import { CheckCircleFilled } from '@ant-design/icons'
+      import { setColorPrimary } from '@/store/slices/theme'
+      import { globalConfig } from '@/globalConfig'
+      import './themeModal.styl'
+      function ThemeModal({ onClose }) {
+      
+          // 获取redux派发钩子
+          const dispatch = useDispatch()
+      
+          // 获取store中的主题配置
+          const theme = useSelector((state) => state.theme)
+      
+          return (
+              <Modal
+                  className="M-themeModal"
+                  open={true}
+                  title="主题色"
+                  onCancel={() => {
+                      onClose()
+                  }}
+                  maskClosable={false}
+                  footer={null}
+              >
+                  <div className="colors-con">
+                      {
+                          // 遍历globalConfig配置的customColorPrimarys主题色
+                          globalConfig.customColorPrimarys &&
+                              globalConfig.customColorPrimarys.map((item, index) => {
+                                  return (
+                                      <div
+                                          className="theme-color"
+                                          style={{ backgroundColor: item }}
+                                          key={index}
+                                          onClick={() => {
+                                              dispatch(setColorPrimary(item))
+                                          }}
+                                      >
+                                          {
+                                              // 如果是当前主题色，则显示“对勾”图标
+                                              theme.colorPrimary === item && (
+                                                  <CheckCircleFilled
+                                                      style={{
+                                                          fontSize: 28,
+                                                          color: '#fff',
+                                                      }}
+                                                  />
+                                              )
+                                          }
+                                      </div>
+                                  )
+                              })
+                      }
+                  </div>
+              </Modal>
+          )
+      }
+      export default ThemeModal
+      
+      ```
+   
+      补充相应的样式，新建`src/components/themeModal/themeModal.styl`：
+   
+      ```css
+      .M-themeModal
+          .colors-con
+              margin-top: 20px
+              display: grid
+              grid-template-columns: repeat(6, 1fr)
+              row-gap: 10px
+          .theme-color
+              margin: 0 auto
+              width: 60px
+              height: 60px
+              line-height: 68px
+              border-radius: 6px
+              cursor: pointer
+              text-align: center
+      ```
+   
+      
+   
+      2、引入主题色选择对话框组件
+   
+      修改`src/components/header/index.jsx`：
+   
+      ```tsx
+      +   import { useState } from 'react'
+          import { Button, Card, Menu } from 'antd'
+          // 新加入“太阳”图标
+          import { MoonOutlined, ThemeOutlined, SunOutlined } from '@/components/extraIcons'
+          import { HomeOutlined, UserOutlined } from '@ant-design/icons'
+          import { useLocation, useNavigate } from 'react-router-dom'
+          // 引入Redux
+          import { useSelector, useDispatch } from 'react-redux'
+          // 从主题换肤store分库引入setDark方法
+          import { setDark } from '@/store/slices/theme'
+      +   import ThemeModal from '@/components/themeModal'
+      +   import { globalConfig } from '@/globalConfig'
+          import './header.styl'
+          
+          function Header(props) {
+      
+              ...（略）
+      
+      +       // 是否显示主题色选择对话框
+      +       const [showThemeModal, setShowThemeModal] = useState(false)
+          
+              return (
+                  <Card className="M-header">
+                      <div className="header-wrapper">
+                          <div className="logo-con">Header:{title}</div>
+                          <div className="menu-con">
+                              <Menu
+                                  mode="horizontal"
+                                  selectedKeys={location.pathname}
+                                  items={menuItems}
+                              />
+                          </div>
+                          <div className="opt-con">
+                              ...（略）
+      -                       <Button icon={<ThemeOutlined />} shape="circle"></Button>
+      +                       {
+      +                           // 当globalConfig配置了主题色，并且数量大于0时，才显示主题色换肤按钮
+      +                           globalConfig.customColorPrimarys &&
+      +                               globalConfig.customColorPrimarys.length > 0 && (
+      +                                   <Button
+      +                                       icon={<ThemeOutlined />}
+      +                                       shape="circle"
+      +                                       onClick={() => {
+      +                                           setShowThemeModal(true)
+      +                                       }}
+      +                                   ></Button>
+      +                               )
+      +                       }
+                          </div>
+                      </div>
+      +               {
+      +                   // 显示主题色换肤对话框
+      +                   showThemeModal && (
+      +                       <ThemeModal
+      +                           onClose={() => {
+      +                               setShowThemeModal(false)
+      +                           }}
+      +                       />
+      +                   )
+      +               }
+                  </Card>
+              )
+          }
+          
+          export default Header
+      ```
+   
+      但现在点击颜色后还不能生效，这是因为还没有把主题色传递给Antd。
+   
+      
+   
+      3、将主题色配置应用于项目
+   
+      修改`src/pages/entry/index.jsx`：
+   
+      ```tsx
+          ...（略）
+          
+          function Entry() {
+              ...（略）
+          
+              // Ant Design主题变量
+              let antdTheme = {
+                  // 亮色/暗色配置
+                  algorithm: globalTheme.dark ? darkAlgorithm : defaultAlgorithm,
+              }
+          
+      +       // 应用自定义主题色
+      +       if (globalTheme.colorPrimary) {
+      +           antdTheme.token = {
+      +               colorPrimary: globalTheme.colorPrimary,
+      +           }
+      +       }
+          
+              return (
+                  ...（略）
+      
+      ```
+   
+      现在点击主题色对话框里的颜色就会立即生效了，刷新页面或者重新打开网页也会保留上次的主题色。
+   
+      
+   
+   9. 安装Redux调试浏览器插件
+   
+   10.  基于axios封装公用API库
+   
+       1. 安装axios
+   
+   11. 
+   
+       
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   1. ### 原理就是创建总库，把各个分库都汇总起来。注释已写明，不再赘述。
+   
+      
+   
       ​	
-
+   
       ##### 
-
+   
       
-
+   
       
-
+   
       
 

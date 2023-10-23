@@ -21,6 +21,14 @@ function Entry() {
     algorithm: globalTheme.dark ? darkAlgorithm : defaultAlgorithm,
   }
 
+  // 应用自定义主题色
+  if (globalTheme.colorPrimary) {
+    antdTheme.token = {
+      colorPrimary: globalTheme.colorPrimary,
+    }
+  }
+
+
   return (
     <ConfigProvider theme={antdTheme}>
       <div className="M-entry">
